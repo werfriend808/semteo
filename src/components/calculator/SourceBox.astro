@@ -1,0 +1,71 @@
+---
+interface Props {
+  baseYear: number;
+  lastVerified: string;
+  sources: { name: string; url: string; note?: string }[];
+  needsVerification: string[];
+}
+const { baseYear, lastVerified, sources, needsVerification } = Astro.props;
+---
+
+<section class="box source-box" aria-labelledby="source-title">
+  <h2 id="source-title" class="title">기준일·출처</h2>
+  <p class="meta">
+    <strong>{baseYear}년 기준</strong> · 최종 확인일 <time datetime={lastVerified}>{lastVerified}</time>
+  </p>
+  <ul>
+    {
+      sources.map((s) => (
+        <li>
+          <a href={s.url} target="_blank" rel="noopener noreferrer">
+            {s.name}
+          </a>
+          {s.note && <span class="muted"> — {s.note}</span>}
+        </li>
+      ))
+    }
+  </ul>
+  {
+    needsVerification.length > 0 && (
+      <div class="verify">
+        <p>
+          <strong>확인 필요</strong> — 아래 항목은 공식 해석을 아직 확인하지 못했습니다.
+        </p>
+        <ul>
+          {needsVerification.map((t) => (
+            <li>{t}</li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+</section>
+
+<style>
+  .title {
+    font-size: 1.05rem;
+    margin: 0 0 var(--space-2);
+  }
+  .meta {
+    margin-bottom: var(--space-2);
+  }
+  ul {
+    margin: 0;
+    padding-left: 1.2em;
+    font-size: 0.925rem;
+  }
+  li + li {
+    margin-top: var(--space-1);
+  }
+  .verify {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--warn-bg);
+    color: var(--warn-text);
+    font-size: 0.925rem;
+  }
+  .verify p {
+    margin: 0 0 var(--space-1);
+  }
+</style>

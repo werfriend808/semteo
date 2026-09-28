@@ -1,0 +1,194 @@
+---
+// 모든 계산기 페이지를 src/calculators/<slug>/ 에서 자동 생성한다.
+import { render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AdSlot from '../components/AdSlot.astro';
+import CalculatorCard from '../components/CalculatorCard.astro';
+import CalculatorForm from '../components/calculator/CalculatorForm.astro';
+import ResultView from '../components/calculator/ResultView.astro';
+import Faq from '../components/calculator/Faq.astro';
+import SourceBox from '../components/calculator/SourceBox.astro';
+import { getCalculate } from '../calculators/registry';
+import { getCalculators, type CalculatorEntry } from '../lib/calculators';
+import { defaultInputs } from '../lib/inputs';
+import { CATEGORIES, SITE_NAME } from '../config';
+
+export async function getStaticPaths() {
+  const all = await getCalculators();
+  const bySlug = new Map(all.map((e) => [e.id, e]));
+  return all.map((entry) => {
+    const related = entry.data.related.map((slug) => {
+      const r = bySlug.get(slug);
+      if (!r) throw new Error(`[셈터] ${entry.id}의 related에 없는 계산기 '${slug}'가 있습니다.`);
+      return r;
+    });
+    return { params: { slug: entry.id }, props: { entry, related } };
+  });
+}
+
+interface Props {
+  entry: CalculatorEntry;
+  related: CalculatorEntry[];
+}
+
+const { entry, related } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+const calculate = getCalculate(entry.id);
+
+const defaults = defaultInputs(d.inputs);
+const initialResult = calculate(defaults);
+// 예시는 logic.ts로 직접 계산 → 본문 예시와 로직이 어긋날 수 없다
+const examples = d.examples.map((ex) => ({ ...ex, result: calculate({ ...defaults, ...ex.inputs }) }));
+
+const pageUrl = new URL(`/${entry.id}/`, Astro.site).href;
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: d.title,
+    description: d.description,
+    url: pageUrl,
+    applicationCategory: 'FinanceApplication',
+    operatingSystem: 'All',
+    inLanguage: 'ko',
+    isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'KRW' },
+    dateModified: d.lastVerified,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: SITE_NAME, item: new URL('/', Astro.site).href },
+      { '@type': 'ListItem', position: 2, name: d.title, item: pageUrl },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: d.faq.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  },
+];
+---
+
+<BaseLayout title={d.title} description={d.description} jsonLd={jsonLd}>
+  <nav aria-label="현재 위치" class="breadcrumb">
+    <a href="/">홈</a> <span aria-hidden="true">›</span>
+    <span>{CATEGORIES[d.category]}</span>
+  </nav>
+
+  <article>
+    <header>
+      <h1>{d.title}</h1>
+      <p class="summary">{d.summary}</p>
+    </header>
+
+    <section class="calculator box" aria-label="계산기">
+      <CalculatorForm slug={entry.id} inputs={d.inputs} values={defaults} />
+      <h2 class="visually-hidden">계산 결과</h2>
+      <ResultView result={initialResult} live />
+    </section>
+
+    <AdSlot position="after-result" />
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <AdSlot position="in-content" />
+
+    <section aria-labelledby="examples-title">
+      <h2 id="examples-title">계산 예시</h2>
+      {
+        examples.map((ex) => (
+          <div class="example">
+            <h3>{ex.title}</h3>
+            {ex.description && <p>{ex.description}</p>}
+            <ResultView result={ex.result} />
+          </div>
+        ))
+      }
+    </section>
+
+    <Faq items={d.faq} />
+
+    <SourceBox
+      baseYear={d.baseYear}
+      lastVerified={d.lastVerified}
+      sources={d.sources}
+      needsVerification={d.needsVerification}
+    />
+
+    {
+      related.length > 0 && (
+        <section aria-labelledby="related-title">
+          <h2 id="related-title">관련 계산기</h2>
+          <ul class="related">
+            {related.map((r) => (
+              <li>
+                <CalculatorCard slug={r.id} title={r.data.title} summary={r.data.summary} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <p class="disclaimer">
+      이 계산기의 결과는 참고용이며 법적 효력이 없습니다. 실제 세액·금액은 개별 상황에 따라 달라질 수 있으니 중요한
+      결정 전에는 관할 기관이나 전문가에게 확인하세요.
+    </p>
+
+    <AdSlot position="end" />
+  </article>
+</BaseLayout>
+
+<script>
+  import { initCalculator } from '../lib/runtime';
+  initCalculator();
+</script>
+
+<style>
+  .breadcrumb {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-3);
+  }
+  .breadcrumb a {
+    color: var(--text-muted);
+  }
+  .summary {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+  }
+  .calculator {
+    background: var(--surface);
+    display: grid;
+    gap: var(--space-5);
+  }
+  .example {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+  .example h3 {
+    margin-top: 0;
+  }
+  .related {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .disclaimer {
+    margin-top: var(--space-5);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+</style>

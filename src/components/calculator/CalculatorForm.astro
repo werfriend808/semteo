@@ -1,0 +1,181 @@
+---
+// frontmatter의 inputs 정의로 입력 폼을 자동 렌더링한다.
+import type { Inputs } from '../../calculators/types';
+import { formatNumber } from '../../lib/format';
+import { isVisible, type InputDef } from '../../lib/inputs';
+
+interface Props {
+  slug: string;
+  inputs: InputDef[];
+  values: Inputs;
+}
+const { slug, inputs, values } = Astro.props;
+const fid = (id: string) => `f-${id}`;
+const numberValue = (v: Inputs[string]) => (typeof v === 'number' ? formatNumber(v) : '');
+---
+
+<form class="calc-form" data-calculator={slug} novalidate>
+  {
+    inputs.map((d) => {
+      const helpId = d.help ? `${fid(d.id)}-help` : undefined;
+      const hidden = !isVisible(d, values);
+      if (d.type === 'radio') {
+        return (
+          <fieldset class="field" data-field={d.id} hidden={hidden}>
+            <legend class="label">{d.label}</legend>
+            <div class="radios">
+              {d.options!.map((o) => (
+                <label class="radio">
+                  <input type="radio" name={d.id} value={o.value} checked={values[d.id] === o.value} />
+                  <span>{o.label}</span>
+                </label>
+              ))}
+            </div>
+            {helpId && <p id={helpId} class="help">{d.help}</p>}
+          </fieldset>
+        );
+      }
+      return (
+        <div class="field" data-field={d.id} hidden={hidden}>
+          <label class="label" for={fid(d.id)}>
+            {d.label}
+          </label>
+          <div class="control">
+            {d.type === 'number' && (
+              <input
+                id={fid(d.id)}
+                name={d.id}
+                type="text"
+                inputmode={(d.step ?? 1) < 1 ? 'decimal' : 'numeric'}
+                autocomplete="off"
+                enterkeyhint="done"
+                value={numberValue(values[d.id])}
+                placeholder={d.placeholder}
+                aria-describedby={helpId}
+                data-min={d.min}
+                data-max={d.max}
+              />
+            )}
+            {d.type === 'select' && (
+              <select id={fid(d.id)} name={d.id} aria-describedby={helpId}>
+                {d.options!.map((o) => (
+                  <option value={o.value} selected={values[d.id] === o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            )}
+            {d.type === 'date' && (
+              <input
+                id={fid(d.id)}
+                name={d.id}
+                type="date"
+                value={values[d.id] ?? ''}
+                min={d.min}
+                max={d.max}
+                aria-describedby={helpId}
+              />
+            )}
+            {d.unit && <span class="unit">{d.unit}</span>}
+          </div>
+          {helpId && <p id={helpId} class="help">{d.help}</p>}
+        </div>
+      );
+    })
+  }
+</form>
+<script type="application/json" id="calc-inputs" set:html={JSON.stringify(inputs).replace(/</g, '\\u003c')} />
+
+<style>
+  .calc-form {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .field {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .field[hidden] {
+    display: none;
+  }
+  .label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+    padding: 0;
+  }
+  .control {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  input[type='text'],
+  input[type='date'],
+  select {
+    flex: 1;
+    min-width: 0;
+    height: 52px;
+    padding: 0 var(--space-3);
+    font: inherit;
+    font-size: 1.2rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  input[type='text'] {
+    text-align: right;
+  }
+  input:focus,
+  select:focus {
+    border-color: var(--accent);
+  }
+  .unit {
+    color: var(--text-muted);
+    min-width: 1.5em;
+  }
+  .radios {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .radio {
+    position: relative;
+    flex: 1 1 140px;
+  }
+  .radio input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+  .radio span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    font-size: 0.95rem;
+  }
+  .radio input:checked + span {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    font-weight: 600;
+  }
+  .radio input:focus-visible + span {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .help {
+    margin: var(--space-2) 0 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+</style>
