@@ -1,0 +1,28 @@
+---
+// 소개·약관 등 텍스트 페이지 공통 레이아웃
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  updated?: string;
+}
+const { title, description, updated } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <article class="page">
+    <h1>{title}</h1>
+    {updated && <p class="muted">최종 수정일 <time datetime={updated}>{updated}</time></p>}
+    <slot />
+  </article>
+</BaseLayout>
+
+<style>
+  .page :global(h2) {
+    font-size: 1.15rem;
+  }
+  .page :global(li) {
+    margin-bottom: var(--space-1);
+  }
+</style>

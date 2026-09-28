@@ -1,0 +1,48 @@
+---
+// 광고 자리. ADS_ENABLED=false면 아무것도 렌더링하지 않는다.
+// true면 CLS 방지를 위해 위치별 최소 높이를 먼저 예약한다.
+// TODO(애드센스 승인 후): 아래 div 안에 <ins class="adsbygoogle" ...> 삽입, BaseLayout <head>에 애드센스 스크립트 추가
+import { ADS_ENABLED } from '../config';
+
+interface Props {
+  position: 'after-result' | 'in-content' | 'end';
+}
+const { position } = Astro.props;
+---
+
+{
+  ADS_ENABLED && (
+    <aside class="ad-slot" data-position={position} aria-label="광고">
+      <span class="ad-label">광고</span>
+    </aside>
+  )
+}
+
+<style>
+  .ad-slot {
+    position: relative;
+    margin: var(--space-5) 0;
+    min-height: 280px;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .ad-slot[data-position='in-content'] {
+    min-height: 250px;
+  }
+  @media (min-width: 768px) {
+    .ad-slot {
+      min-height: 250px;
+    }
+    .ad-slot[data-position='in-content'] {
+      min-height: 200px;
+    }
+  }
+  .ad-label {
+    position: absolute;
+    top: 4px;
+    left: 8px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+</style>

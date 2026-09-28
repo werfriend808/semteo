@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CalculatorCard from '../components/CalculatorCard.astro';
+import { getCalculators } from '../lib/calculators';
+import { CATEGORIES, SITE_DESCRIPTION, SITE_NAME, SITE_URL, type CategoryKey } from '../config';
+
+const calculators = await getCalculators();
+const groups = (Object.keys(CATEGORIES) as CategoryKey[])
+  .map((key) => ({ key, label: CATEGORIES[key], items: calculators.filter((c) => c.data.category === key) }))
+  .filter((g) => g.items.length > 0);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE_NAME,
+    url: new URL('/', SITE_URL).href,
+    inLanguage: 'ko',
+    description: SITE_DESCRIPTION,
+  },
+];
+---
+
+<BaseLayout jsonLd={jsonLd}>
+  <header class="hero">
+    <h1>생활 계산기, {SITE_NAME}</h1>
+    <p class="muted">{SITE_DESCRIPTION}</p>
+  </header>
+
+  {
+    groups.map((g) => (
+      <section aria-labelledby={`cat-${g.key}`}>
+        <h2 id={`cat-${g.key}`}>{g.label}</h2>
+        <ul class="grid">
+          {g.items.map((c) => (
+            <li>
+              <CalculatorCard slug={c.id} title={c.data.title} summary={c.data.summary} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</BaseLayout>
+
+<style>
+  .hero {
+    margin-bottom: var(--space-5);
+  }
+  .grid {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 560px) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

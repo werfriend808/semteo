@@ -1,0 +1,39 @@
+---
+interface Props {
+  slug: string;
+  title: string;
+  summary: string;
+}
+const { slug, title, summary } = Astro.props;
+---
+
+<a class="card" href={`/${slug}/`}>
+  <span class="card-title">{title}</span>
+  <span class="card-summary">{summary}</span>
+</a>
+
+<style>
+  .card {
+    display: block;
+    height: 100%;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    text-decoration: none;
+  }
+  .card:hover {
+    border-color: var(--accent);
+  }
+  .card-title {
+    display: block;
+    font-weight: 700;
+    margin-bottom: var(--space-1);
+  }
+  .card-summary {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+</style>

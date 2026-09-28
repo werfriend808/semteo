@@ -1,0 +1,9 @@
+---
+interface Props {
+  data: Record<string, unknown>;
+}
+// </script> 주입 방지를 위해 < 를 이스케이프
+const json = JSON.stringify(Astro.props.data).replace(/</g, '\\u003c');
+---
+
+<script type="application/ld+json" set:html={json} />

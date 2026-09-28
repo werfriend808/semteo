@@ -1,0 +1,68 @@
+---
+import { SITE_NAME } from '../config';
+
+const links = [
+  { href: '/', label: '전체 계산기' },
+  { href: '/about/', label: '소개' },
+  { href: '/contact/', label: '문의' },
+];
+const path = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="container inner">
+    <a href="/" class="logo">{SITE_NAME}</a>
+    <nav aria-label="주 메뉴">
+      <ul>
+        {
+          links.map((l) => (
+            <li>
+              <a href={l.href} aria-current={path === l.href ? 'page' : undefined}>
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 56px;
+    gap: var(--space-3);
+  }
+  .logo {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  ul {
+    display: flex;
+    gap: var(--space-1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  nav a {
+    display: inline-block;
+    padding: var(--space-2) var(--space-2);
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  nav a[aria-current='page'] {
+    color: var(--text);
+    font-weight: 600;
+  }
+</style>
